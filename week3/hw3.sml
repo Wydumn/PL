@@ -51,13 +51,14 @@ fun first_answer f = fn xs => case xs of
                                                   | NONE => first_answer f xs'
 
 (* 8 *)
+(* val all_answers = fn : (’a -> ’b list option) -> ’a list -> ’b list option *)
 fun all_answers f = fn xs =>
                         let
                             fun helper (acc, lst) =
                                 case lst of
                                     []  =>  SOME []
-                                  | l::lst'  => case (f l) of
-                                                    SOME l  =>  helper (acc @ [l], lst')
+                                  | l::lst'  => case (f l) of       (* datatype List = Empty | 'a :: 'a list *)
+                                                    SOME l  =>  helper (acc @ l, lst')
                                                   | NONE => NONE
                         in
                             helper ([], xs)
@@ -70,12 +71,6 @@ datatype pattern =
 		 | ConstP of int
 		 | TupleP of pattern list
 		 | ConstructorP of string * pattern
-
-datatype valu =
-            Const of int
-	      | Unit
-	      | Tuple of valu list
-	      | Constructor of string * valu
 
 fun g f1 f2 p =
     let
@@ -115,16 +110,71 @@ List.exists may be useful.
 fun check_pat p =
     let fun helper pa =
             case pa of
-                  Wildcard          => f1 ()
-                | Variable x        => x
-                | TupleP ps         => List.foldl (fn (p,i) => (r p) + i) 0 ps
-                | ConstructorP(_,p) =>
-                | _                 =>
-    in
+                Variable s => [s]
+              | TupleP plst => List.foldl (fn (x, y) => (helper x) @ y) [] plst
+              | ConstructorP (s,cp) => [s] @ (helper cp)
+              | _ => []
 
+        fun helper2 strlst =
+            case strlst of
+                []  =>  false
+              | x::xs' => (List.exists (fn y => y = x) strlst) orelse (helper2 xs')
+
+    in
+        helper2(helper p)
     end
 
 
+
+datatype valu =
+        Const of int
+      | Unit
+      | Tuple of valu list
+      | Constructor of string * valu
+
+
+datatype pattern =
+        Wildcard
+      | Variable of string
+      | UnitP
+      | ConstP of int
+      | TupleP of pattern list
+      | ConstructorP of string * pattern
+
+fun match (va, ptn) =
+    case (va, ptn) of
+        (_, Wildcard)   =>  SOME []
+      | (v, Variable str)   =>  SOME [(str, v)]             (* strng * valu list option *)
+      | (Const v, ConstP i) =>  if v = i then SOME [] else NONE
+      | (Tuple vs, TupleP ps)   =>  if List.length vs = List.length ps
+                                    then all_answers match (ListPair.zip(vs, ps))
+                                    else NONE
+      | (Constructor(s', v), ConstructorP(s'', p))  =>  if s' = s''
+                                                        then match(v,p)
+                                                        else NONE
+      | (Unit, UnitP)   =>  SOME []
+      | (_, _)  =>  NONE
+
 (* 11 *)
+(*
+    Write a function match that takes a valu * pattern and returns a (string * valu) list option,
+
+    namely NONE if the pattern does not match and SOME lst where lst is the list of bindings if it does.
+
+    Note that if the value matches but the pattern has no patterns of the form Variable s, then the result is SOME [].
+
+Hints: Sample solution has one case expression with 7 branches. The branch for tuples
+uses all_answers and ListPair.zip. Sample solution is 13 lines. Remember to look above for the
+rules for what patterns match what values, and what bindings they produce. These are hints: We are
+not requiring all_answers and ListPair.zip here, but they make it easier.
+ *)
+fun match (v, p) =
+    case (v, p) of
+
+
+
+
+
+
 
 (* 12 *)
